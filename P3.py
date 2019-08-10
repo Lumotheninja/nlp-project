@@ -1,8 +1,10 @@
 from P1 import TrainProbabilities, START_TOK, STOP_TOK
 from P2 import CRF
 import numpy as np
+from collections import defaultdict
 
 class CRF(CRF):
+
     def _forward(self, w, sentence):
         possible_y = self.train_probabilities.y_count.keys()
 
@@ -14,12 +16,10 @@ class CRF(CRF):
         x = sentence[0]
 
         for next_y in possible_y:
-            
             transition_key = "transition:%s+%s"%(last_y,next_y)
-            emission_key = "emission:%s+%s"%(next_y, x)
             try:
-                alpha_score[next_y] = np.exp(w[transition_key]) * np.exp(w[emission_key])
-            except KeyError:
+                alpha_score[next_y] = np.exp(w[transition_key])
+            except KeyError as e:
                 alpha_score[next_y] = 0
         alpha_list.append(alpha_score)
         
@@ -27,18 +27,14 @@ class CRF(CRF):
         for index, x in enumerate(sentence[1:]):
             alpha_score = {}
             for next_y in possible_y:
-                sum_prob = 0
+                alpha_score[next_y] = 0
                 for last_y in possible_y:
                     transition_key = "transition:%s+%s"%(last_y,next_y)
+                    emission_key = "emission:%s+%s"%(last_y, x)
                     try:
-                        sum_prob += np.exp(w[transition_key]) * alpha_list[index+1][last_y]
+                        alpha_score[next_y] += np.exp(w[transition_key]) * alpha_list[index+1][last_y] * np.exp(w[emission_key])
                     except KeyError:
                         pass
-                emission_key = "emission:%s+%s"%(next_y, x)
-                try:
-                    alpha_score[next_y] = np.exp(w[emission_key]) * sum_prob
-                except KeyError:
-                    alpha_score[next_y] = 0
             alpha_list.append(alpha_score)
         
         
@@ -57,10 +53,26 @@ class CRF(CRF):
 
         return alpha_list
 
-    def calculate_loss(self, w, x, y):
-        forward_score = self._forward(w, x)
-        # log the score stored at the last element of forward score 
-        return np.log(forward_score[-1]["STOP"]) - self._score(x, y)
+    def calculate_loss(self, w, path):
+        loss = 0
+        running_x = []
+        running_y = []
+        with open(path,mode='r',encoding="utf-8") as file:
+            for line in file:
+                # End of a sequence
+                if line=='\n':
+                    forward_score = self._forward(w, running_x)
+                    sentence = " ".join(running_x)
+                    tag = " ".join(running_y)
+                    # log the score stored at the last element of forward score
+                    loss += np.log(forward_score[-1][STOP_TOK]) - self._score(sentence, tag)
+                    running_x = []
+                    running_y = []
+                else:
+                    x,y = line.split()
+                    running_x.append(x)
+                    running_y.append(y)
+        return loss
 
     def _backward(self, w, sentence):
         
@@ -83,15 +95,14 @@ class CRF(CRF):
         for index, x in enumerate(sentence[1:][::-1]):
             beta_score = {}
             for last_y in possible_y:
-                sum_prob = 0
+                beta_score[last_y] = 0
                 for next_y in possible_y:
                     transition_key = "transition:%s+%s"%(last_y,next_y)
                     emission_key = "emission:%s+%s"%(next_y, x)
                     try:
-                        sum_prob += np.exp(w[transition_key]) * np.exp(w[emission_key]) * beta_list[index+1][next_y]
+                        beta_score[last_y] += np.exp(w[transition_key]) * np.exp(w[emission_key]) * beta_list[index+1][next_y]
                     except KeyError:
                         pass
-                beta_score[last_y]  = sum_prob
             beta_list.append(beta_score)
         
         # START to all y
@@ -111,79 +122,87 @@ class CRF(CRF):
 
         return beta_list[::-1]
                 
-    def _gradient(self, x, y):
-        """
-        Calculates gradient for single word sequence x and label sequence y
-        x: str
-        y: str
-        """
-        x = x.split('')
-        y = y.split('')
-        sent_len = len(x)
-        tag_len = len(self.train_probabilities.y_count.keys())
-        w = crf.train_probabilities.f
+    def calculate_gradient(self, w, path):
         
-        forward = crf._forward(w, x)
-        backward = crf._backward(w, x)
-        denom = forward[-1][STOP_TOK]
+        w_score = defaultdict(float)
+        y_x_count = defaultdict(int)
+        y0_y1_count = defaultdict(int)
+        last_y = START_TOK
+        running_x = []
+        running_y = []
+
+        with open(path,mode='r',encoding="utf-8") as file:
+            for line in file:
+
+                # End of a sequence
+                if line=='\n':
+
+                    # calculate forward backward scores and denom
+                    forward_score = self._forward(w, running_x)
+                    backward_score = self._backward(w, running_x)
+                    denom = forward_score[-1][STOP_TOK]
+                    # iterate through the y,x sequences in the sentence
+                    for (y,x), counts in y_x_count.items():
+                        emission_key = "emission:%s+%s"%(y, x)
+                        expected_counts = 0
+                        # omit y as START and STOP
+                        for index in range(1,len(forward_score)-1): 
+
+                            # include all possible transitions
+                            for next_y in forward_score[index+1].keys():
+                                try:
+                                    transition_key = "transition:%s+%s"%(y,next_y)
+                                    expected_counts += forward_score[index][y] * backward_score[index+1][next_y] * w[emission_key] * w[transition_key]
+                                except:
+                                    pass
+                        w_score[emission_key] += expected_counts/denom - counts
+
+                    # iterate through the y0,y1 sequences in the sentence
+                    for (y0,y1), counts in y0_y1_count.items():
+                        transition_key = "transition:%s+%s"%(y0,y1)
+                        expected_counts = 0
+                        # omit y0 as STOP
+                        for index in range(0,len(forward_score)-1):
+
+                            # START doesnt have emission
+                            if index == 0:
+                                try:
+                                    expected_counts += forward_score[index][y0] * w[transition_key] * backward_score[index+1][y1]
+                                except KeyError:
+                                    pass
+
+                            # include y0 emission
+                            else:
+                                x = running_x[index-1]
+                                emission_key = "emission:%s+%s"%(y0, x)
+                                try:
+                                    expected_counts += forward_score[index][y0] * backward_score[index+1][y1] * w[emission_key] * w[transition_key]
+                                except KeyError:
+                                    pass
+
+                        w_score[transition_key] += expected_counts/denom - counts
+                    
+                    # reset
+                    y_x_count = defaultdict(int)
+                    y0_y1_count = defaultdict(int)
+                    last_y = START_TOK
+                    running_x = []
+                    running_y = []
+
+                else:
+                    x,y = line.split()
+                    y_x_count[(y,x)] += 1
+                    y0_y1_count[(last_y,y)] += 1
+                    last_y = y
+                    running_x.append(x)
+                    running_y.append(y)
+
+        return w_score
         
-        w_score = {}
-
-        for weights in w.keys():
-
-            # emission score
-            if weights[0] == 'e':
-                next_y = weights.split(":")[1].split("+")[0]
-                word = weights.split(":")[1].split("+")[0]
-                gradient_score = 0
-
-                # sum over all possible last y that can go to next y and next y to word
-                for index in range(len(forward)-1):
-                    for last_y in forward[index].keys():
-                        transition_key = "transition:%s+%s"%(last_y,next_y)
-                        try:
-                            gradient_score += forward[index][last_y] * w[transition_key] * backward[index+1][next_y] * w[weights]
-                    except KeyError:
-                        pass
-                
-                gradient_score /= denom
-
-                # minus off count, calculated using closed form formula
-                gradient_score -= (tag_len**(sent_len-2) * (sent_len - 1))
-                w_score[weights] = gradient_score
-                
-            # transmission score
-            else:
-                last_y = weights.split(":")[1].split("+")[0]
-                next_y = weights.split(":")[1].split("+")[0]
-                gradient_score = 0
-
-                # sum over all possible indices
-                for index in range(len(forward)-1):
-                    try:
-                        gradient_score += forward[index][last_y] * w[weights] * backward[index+1][next_y]
-                    except KeyError:
-                        pass
-                
-                gradient_score /= denom
-
-                # minus off count, calculated using closed form formula
-                gradient_score -= (tag_len**(sent_len-2) * (sent_len - 1))
-                w_score[weights] = gradient_score
-            
-            return w_score
-            
-    def apply_gradient(self,train_path='data/EN/train'):
-        try:
-            os.remove(save_path)
-        except:
-            pass
-        
-        pass
-        
-
 
 crf = CRF()
+print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
+print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
 
 
 
