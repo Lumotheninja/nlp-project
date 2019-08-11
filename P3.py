@@ -2,6 +2,7 @@ from P1 import TrainProbabilities, START_TOK, STOP_TOK
 from P2 import CRF
 import numpy as np
 from collections import defaultdict
+import copy
 
 class CRF(CRF):
 
@@ -141,10 +142,10 @@ class CRF(CRF):
                 # End of a sequence
                 if line=='\n':
                     # calculate forward backward scores and denom
+                    y0_y1_count[(last_y,STOP_TOK)] += 1
                     forward_score = self._forward(w, running_x)
                     backward_score = self._backward(w, running_x)
                     denom = forward_score[-1][STOP_TOK]
-                    # print (denom)
 
                     # iterate through the y,x sequences in the sentence
                     for (y,x), counts in y_x_count.items():
@@ -204,11 +205,18 @@ class CRF(CRF):
                     running_y.append(y)
         return w_score
         
+    def test_gradient(self, w, path, key, value =0.01):
+        gradient = crf.calculate_gradient(w, path)[key]
+        w_test = copy.deepcopy(w)
+        w_test[key] += value
+        diff = (crf.calculate_loss(w_test, path) - crf.calculate_loss(w, path))/ value
+        return gradient, diff
+        
 
 crf = CRF()
-
-print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
-print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
+print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:B-positive+Mermaid'))
+#print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
+#print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
 
 
 
