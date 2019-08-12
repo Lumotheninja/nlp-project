@@ -160,31 +160,30 @@ class CRF:
         except:
             print(last_layer_scores)
             raise Exception
-    
-    
 
 
-crf = CRF()
-crf.apply_viterbi()
-#print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
-#print(crf.train_probabilities.f.keys())
+if __name__ == "__main__":
+    crf = CRF()
+    crf.apply_viterbi()
+    #print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
+    #print(crf.train_probabilities.f.keys())
 
 
 
 
-#for y in 'O B-positive B-negative'.split():
-#    try:
-#        print(crf.train_probabilities.f["transition:%s+%s"%(y,STOP_TOK)])
-#    except:
-#        pass
+    #for y in 'O B-positive B-negative'.split():
+    #    try:
+    #        print(crf.train_probabilities.f["transition:%s+%s"%(y,STOP_TOK)])
+    #    except:
+    #        pass
 
 
-"""
-emission:O+All transition:♞START♞+O -9.079345204990318
-emission:B-positive+All transition:♞START♞+B-positive -3.153270067770207
-emission:B-negative+All transition:♞START♞+B-negative -4.539564428890097
-emission:B-neutral+All transition:♞START♞+B-neutral -5.0503900526560885
-"""
+    """
+    emission:O+All transition:♞START♞+O -9.079345204990318
+    emission:B-positive+All transition:♞START♞+B-positive -3.153270067770207
+    emission:B-negative+All transition:♞START♞+B-negative -4.539564428890097
+    emission:B-neutral+All transition:♞START♞+B-neutral -5.0503900526560885
+    """
 
 
 

@@ -229,11 +229,11 @@ class CRF(CRF):
         diff /= value
         return gradient, diff
         
-
-crf = CRF()
-#print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+originally'))
-#print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
-#print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
+if __name__ == "__main__":
+  crf = CRF()
+  #print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+originally'))
+  #print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
+  #print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
 
 
 
