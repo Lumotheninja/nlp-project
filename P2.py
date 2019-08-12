@@ -167,9 +167,10 @@ class CRF:
     
     
 
-
-#crf = CRF()
-#crf.apply_viterbi()
+if __name__ == '__main__':
+    crf = CRF()
+    crf.apply_viterbi()
+    crf.apply_viterbi(test_path='data/ES/dev.in',save_path='data/ES/dev.p2.out')
 #print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
 #print(crf.train_probabilities.f.keys())
 
