@@ -192,7 +192,7 @@ def train(f_path):
             loss.backward()
             optimizer.step()
 
-    torch.save(model.state_dict(), 'bilstm_model.pt')
+    torch.save(model.state_dict(), 'bilstm_model_ES.pt')
     
     # with torch.no_grad():
     #     precheck_sent = prepare_sequence(training_data[5][0], word_to_ix)
@@ -207,7 +207,7 @@ def test(f_path, out_path):
     #             word_to_ix[word] = len(word_to_ix)
     # word_to_ix["UNK"] = len(word_to_ix)
     model = BiLSTMCRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
-    model.load_state_dict(torch.load('bilstm_model.pt'))
+    model.load_state_dict(torch.load('bilstm_model_ES.pt'))
     model.eval()
 
     ix_to_tag = {v:k for k,v in tag_to_ix.items()}
@@ -235,8 +235,10 @@ if __name__ == "__main__":
     WEIGHT_DECAY = 1e-4
     EPOCHS = 10
     word_to_ix = {}
-    tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, START_TOK: 7, STOP_TOK: 8}
-
-    # train('data/EN/train')
-    test('data/EN/dev.in', 'data/EN/dev.p5.out')
+    # TAG to IDX for EN
+    # tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, START_TOK: 7, STOP_TOK: 8}
+    # TAG to IDX for ES
+    tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, 'B-conflict': 7, START_TOK: 8, STOP_TOK: 9}
+    train('data/ES/train')
+    test('data/ES/dev.in', 'data/ES/dev.p5.out')
 

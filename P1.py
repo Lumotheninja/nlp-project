@@ -9,7 +9,6 @@ class TrainProbabilities:
         self.train_path = train_path
         self._get_all_counts(train_path)
         self._get_f()
-        print(self.f)
 
     def _get_all_counts(self,path):
         self.y_count = defaultdict(int)
@@ -47,7 +46,9 @@ class TrainProbabilities:
         }
         self.f = {**e,**q}
 
-TrainProbabilities()
+if __name__ == "__main__":
+    t = TrainProbabilities()
+    print(t.y_count.keys())
 
 
 

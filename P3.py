@@ -204,11 +204,11 @@ class CRF(CRF):
                     running_y.append(y)
         return w_score
         
+if __name__ == "__main__":
+    crf = CRF()
 
-crf = CRF()
-
-print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
-print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
+    print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
+    print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
 
 
 
