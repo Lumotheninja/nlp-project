@@ -39,12 +39,16 @@ class CRF:
                 
     
     
-    def _score(self,x,y):
+    def _score(self,x,y,w=None):
         """
         Calculates score for single word sequence x and label sequence y
         x: str
         y: str
+        w: dictionary of feature functions scores
         """
+        
+        if w is None:
+            w = self.train_probabilities.f
         
         # Extract counts
         x = x.split()
@@ -85,7 +89,7 @@ class CRF:
         f = {**e,**q}
         
         # Return score
-        return sum([self.train_probabilities.f[key]*value for key,value in f.items()])
+        return sum([w[key]*value for key,value in f.items()])
     
     
     def _viterbi(self,sentence):
@@ -160,30 +164,31 @@ class CRF:
         except:
             print(last_layer_scores)
             raise Exception
+    
+    
 
 
-if __name__ == "__main__":
-    crf = CRF()
-    crf.apply_viterbi()
-    #print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
-    #print(crf.train_probabilities.f.keys())
+#crf = CRF()
+#crf.apply_viterbi()
+#print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
+#print(crf.train_probabilities.f.keys())
 
 
 
 
-    #for y in 'O B-positive B-negative'.split():
-    #    try:
-    #        print(crf.train_probabilities.f["transition:%s+%s"%(y,STOP_TOK)])
-    #    except:
-    #        pass
+#for y in 'O B-positive B-negative'.split():
+#    try:
+#        print(crf.train_probabilities.f["transition:%s+%s"%(y,STOP_TOK)])
+#    except:
+#        pass
 
 
-    """
-    emission:O+All transition:♞START♞+O -9.079345204990318
-    emission:B-positive+All transition:♞START♞+B-positive -3.153270067770207
-    emission:B-negative+All transition:♞START♞+B-negative -4.539564428890097
-    emission:B-neutral+All transition:♞START♞+B-neutral -5.0503900526560885
-    """
+"""
+emission:O+All transition:♞START♞+O -9.079345204990318
+emission:B-positive+All transition:♞START♞+B-positive -3.153270067770207
+emission:B-negative+All transition:♞START♞+B-negative -4.539564428890097
+emission:B-neutral+All transition:♞START♞+B-neutral -5.0503900526560885
+"""
 
 
 

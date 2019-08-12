@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 import copy
 
+
 class CRF(CRF):
 
     def _forward(self, w, sentence):
@@ -56,6 +57,7 @@ class CRF(CRF):
 
     def calculate_loss(self, w, path):
         loss = 0
+        
         running_x = []
         running_y = []
         with open(path,mode='r',encoding="utf-8") as file:
@@ -67,7 +69,7 @@ class CRF(CRF):
                     tag = " ".join(running_y)
 
                     # log the score stored at the last element of forward score
-                    loss += np.log(forward_score[-1][STOP_TOK]) - self._score(sentence, tag)
+                    loss += np.log(forward_score[-1][STOP_TOK]) - self._score(sentence, tag, w=w)
                     running_x = []
                     running_y = []
                 else:
@@ -154,7 +156,6 @@ class CRF(CRF):
                         expected_counts = 0
                         # omit y as START and STOP
                         for index in range(1,len(forward_score)-1): 
-
                             # include all possible transitions
                             for next_y in forward_score[index+1].keys():
                                 try:
@@ -162,7 +163,6 @@ class CRF(CRF):
                                     expected_counts += forward_score[index][y] * backward_score[index+1][next_y] * np.exp(w[emission_key]) * np.exp(w[transition_key])
                                 except:
                                     pass
-
                         w_score[emission_key] += expected_counts/denom - counts
                         '''
                         
@@ -225,49 +225,13 @@ class CRF(CRF):
         gradient = crf.calculate_gradient(w, path)[key]
         w_test = copy.deepcopy(w)
         w_test[key] += value
+        
         diff = (crf.calculate_loss(w_test, path) - crf.calculate_loss(w, path))
         diff /= value
         return gradient, diff
         
 if __name__ == "__main__":
   crf = CRF()
-  #print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+originally'))
+  print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+and',value=-.1))
   #print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
   #print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-
-        
