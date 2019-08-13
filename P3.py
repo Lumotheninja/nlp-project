@@ -11,17 +11,20 @@ class CRF(CRF):
         possible_y = self.train_probabilities.y_count.keys()
 
         # base case
-        alpha_list = [{START_TOK: 1}]
+        alpha_list = [{START_TOK: 0}]
 
         # START to all y
         last_y = START_TOK
         alpha_score = {}
         for next_y in possible_y:
             transition_key = "transition:%s+%s"%(last_y,next_y)
-            try:
-                alpha_score[next_y] = np.exp(w[transition_key])
-            except KeyError:
-                alpha_score[next_y] = 0
+            # force constraint to never transition to start token
+            # if next_y == START_TOK:
+            #     w[transition_key] = -10000.
+            # try:
+            alpha_score[next_y] = w[transition_key]
+            # except KeyError:
+            #     alpha_score[next_y] = 0
         alpha_list.append(alpha_score)
         
         # all y to all y
@@ -29,13 +32,18 @@ class CRF(CRF):
             alpha_score = {}
             for next_y in possible_y:
                 alpha_score[next_y] = 0
+                scores = []
                 for last_y in possible_y:
                     transition_key = "transition:%s+%s"%(last_y,next_y)
                     emission_key = "emission:%s+%s"%(last_y, x)
-                    try:
-                        alpha_score[next_y] += np.exp(w[transition_key]) * alpha_list[index+1][last_y] * np.exp(w[emission_key])
-                    except KeyError:
-                        pass
+                    # if next_y == START_TOK or last_y == STOP_TOK:
+                    #     w[transition_key] = -10000.
+                    # try:
+                    score = w[transition_key] + alpha_list[index+1][last_y] + w[emission_key]
+                    scores.append(score)
+                    # except KeyError:
+                    #     scores.append(-10000.)
+                alpha_score[next_y] = log_sum_exp(np.array(scores))
             alpha_list.append(alpha_score)
         
         
@@ -44,13 +52,18 @@ class CRF(CRF):
         x = sentence[-1]
         alpha_score = {}
         alpha_score[next_y] = 0
+        scores = []
         for last_y in possible_y:
             transition_key = "transition:%s+%s"%(last_y,next_y)
             emission_key = "emission:%s+%s"%(last_y, x)
-            try:
-                alpha_score[next_y] += np.exp(w[transition_key]) * alpha_list[-1][last_y] * np.exp(w[emission_key])
-            except KeyError:
-                pass
+            # if last_y == STOP_TOK:
+            #     W[transition_key] = -10000.
+            # try:
+            score = w[transition_key] + alpha_list[-1][last_y] + w[emission_key]
+            scores.append(score)
+            # except KeyError:
+            #     scores.append(-10000.)
+        alpha_score[next_y] = log_sum_exp(np.array(scores))
         alpha_list.append(alpha_score)
 
         return alpha_list
@@ -69,7 +82,7 @@ class CRF(CRF):
                     tag = " ".join(running_y)
 
                     # log the score stored at the last element of forward score
-                    loss += np.log(forward_score[-1][STOP_TOK]) - self._score(sentence, tag, w=w)
+                    loss += forward_score[-1][STOP_TOK] - self._score(sentence, tag, w=w)
                     running_x = []
                     running_y = []
                 else:
@@ -83,7 +96,7 @@ class CRF(CRF):
         possible_y = self.train_probabilities.y_count.keys()
 
         # base case
-        beta_list = [{STOP_TOK: 1}]
+        beta_list = [{STOP_TOK: 0}]
 
         # all y to STOP
         next_y = STOP_TOK
@@ -92,10 +105,12 @@ class CRF(CRF):
         for last_y in possible_y:
             emission_key = "emission:%s+%s"%(last_y, x)
             transition_key = "transition:%s+%s"%(last_y,next_y)
-            try:
-                beta_score[last_y] = np.exp(w[transition_key]) * np.exp(w[emission_key])
-            except KeyError:
-                beta_score[last_y] = 0
+            # if last_y == STOP_TOK:
+            #     w[transition_key] = -10000.
+            # try:
+            beta_score[last_y] = w[transition_key] + w[emission_key]
+            # except KeyError:
+            #     beta_score[last_y] = 0
         beta_list.append(beta_score)
         
         # all y to all y
@@ -103,26 +118,33 @@ class CRF(CRF):
             beta_score = {}
             for last_y in possible_y:
                 beta_score[last_y] = 0
+                scores = []
                 for next_y in possible_y:
                     transition_key = "transition:%s+%s"%(last_y,next_y)
                     emission_key = "emission:%s+%s"%(last_y, x)
-                    try:
-                        beta_score[last_y] += np.exp(w[transition_key]) * beta_list[index+1][next_y] * np.exp(w[emission_key])
-                    except KeyError:
-                        pass
+                    # if last_y == STOP_TOK or next_y == START_TOK:
+                    #     w[transition_key] = -10000.
+                    # try:
+                    score = w[transition_key] + beta_list[index+1][next_y] + w[emission_key]
+                    scores.append(score)
+                    # except KeyError:
+                    #     scores.append(-10000)
+                beta_score[last_y] = log_sum_exp(np.array(scores))
             beta_list.append(beta_score)
         
         # START to all y
         last_y = START_TOK
         beta_score = {}
-        sum_prob = 0
+        sum_prob = []
         for next_y in possible_y:
             transition_key = "transition:%s+%s"%(last_y,next_y)
-            try:
-                sum_prob += np.exp(w[transition_key]) * beta_list[-1][next_y]
-            except KeyError:
-                pass
-        beta_score[last_y] = sum_prob
+            # if next_y == START_TOK:
+            #     w[transition_key] = -10000.
+            # try:
+            sum_prob.append(w[transition_key] + beta_list[-1][next_y])
+            # except KeyError:
+            #     sum_prob.append(-10000)
+        beta_score[last_y] = log_sum_exp(np.array(sum_prob))
         beta_list.append(beta_score)
 
         return beta_list[::-1]
@@ -145,8 +167,10 @@ class CRF(CRF):
                     y0_y1_count[(last_y,STOP_TOK)] += 1
                     forward_score = self._forward(w, running_x)
                     backward_score = self._backward(w, running_x)
+                    # print(forward_score)
+                    # print(backward_score)
                     
-                    denom = forward_score[-1][STOP_TOK]
+                    denom = np.exp(forward_score[-1][STOP_TOK])
 
                     # iterate through the y,x sequences in the sentence
                     for (y,x), counts in y_x_count.items():
@@ -173,7 +197,7 @@ class CRF(CRF):
                             # include all possible transitions
                             if x == running_x[index]:
                                 try:
-                                    expected_counts += forward_score[index+1][y] * backward_score[index+1][y]
+                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y])
                                 except KeyError as e:
                                     pass
                         w_score[emission_key] += expected_counts/denom - counts
@@ -190,7 +214,7 @@ class CRF(CRF):
                             # START doesnt have emission
                             if index == 0:
                                 try:
-                                    expected_counts += forward_score[index][y0] * backward_score[index+1][y1]* np.exp(w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key])
                                 except KeyError:
                                     pass
 
@@ -199,7 +223,7 @@ class CRF(CRF):
                                 x = running_x[index-1]
                                 emission_key = "emission:%s+%s"%(y0, x)
                                 try:
-                                    expected_counts += forward_score[index][y0] * backward_score[index+1][y1] * np.exp(w[emission_key]) * np.exp(w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key])
                                 except KeyError as e:
                                     pass
 
@@ -226,10 +250,17 @@ class CRF(CRF):
         w_test = copy.deepcopy(w)
         w_test[key] += value
         
-        diff = (crf.calculate_loss(w_test, path) - crf.calculate_loss(w, path))
+        v2 = crf.calculate_loss(w_test, path)
+        v1 = crf.calculate_loss(w, path)
+        print(v2, v1)
+        diff = v2 - v1
         diff /= value
         return gradient, diff
-        
+
+def log_sum_exp(vec):
+    max_score = np.max(vec)
+    return max_score + np.log(np.sum(np.exp(vec - max_score)))
+
 if __name__ == "__main__":
   crf = CRF()
   print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+and',value=-.1))
