@@ -44,7 +44,9 @@ class TrainProbabilities:
             "transition:%s+%s"%(key):log(value/self.y_count[key[0]])
             for key,value in self.y0_y1_count.items()
         }
-        self.f = {**e,**q}
+        self.f = defaultdict(lambda:-10000.)
+        self.f.update(e)
+        self.f.update(q)
 
 if __name__ == "__main__":
     t = TrainProbabilities()
