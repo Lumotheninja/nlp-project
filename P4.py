@@ -175,7 +175,8 @@ class CRF(CRF):
                     # print(forward_score)
                     # print(backward_score)
                     
-                    denom = np.exp(forward_score[-1][STOP_TOK])
+#                    denom = np.exp(forward_score[-1][STOP_TOK])
+                    denom = forward_score[-1][STOP_TOK]
 
                     # iterate through the y,x sequences in the sentence
                     for (y,x), counts in y_x_count.items():
@@ -202,7 +203,8 @@ class CRF(CRF):
                             # include all possible transitions
                             if x == running_x[index]:
                                 try:
-                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y])
+#                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y])
+                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y] - denom)
                                 except KeyError as e:
                                     pass
                         w_score[emission_key] += expected_counts/denom - counts
@@ -219,7 +221,8 @@ class CRF(CRF):
                             # START doesnt have emission
                             if index == 0:
                                 try:
-                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key])
+#                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key] - denom)
                                 except KeyError:
                                     pass
 
@@ -228,11 +231,13 @@ class CRF(CRF):
                                 x = running_x[index-1]
                                 emission_key = "emission:%s+%s"%(y0, x)
                                 try:
-                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key])
+#                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key] - denom)
                                 except KeyError as e:
                                     pass
 
-                        w_score[transition_key] += expected_counts/denom - counts
+#                        w_score[transition_key] += expected_counts/denom - counts
+                        w_score[transition_key] += expected_counts - counts
                     
                     # reset
                     y_x_count = defaultdict(int)
@@ -311,4 +316,3 @@ if __name__ == "__main__":
     crf = CRF()
     trained_weights = crf.train()
     crf.decode(trained_weights, 'data/EN/dev.in', 'data/EN/dev.p4.out')
-    
