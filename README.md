@@ -1,21 +1,24 @@
 # NLP Project
+
 Implement CRF by hand based on 2 POS datasets
-| Question | Description                                                                                                                                                         |
+| Question | Description |
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.1      | write a function to estimate the emission probabilities based on the training set                                                                                   |
-| 1.2      | write a function to estimate the transition probabilities based on the training set                                                                                 |
-| 2.1      | write a function to calculate the score for a given pair of input and output sequence pair (x, y), based on the above-mentioned features and weights used in Part 1 |
-| 2.2      | perform decoding using the Viterbi algorithm to find the most probable output sequence y* for an input sequence x                                                   |
-| 3.1      | write a function to calculate the value of the loss defined above based on the forward algorithm                                                                    |
-| 3.2      | implement a function to calculate the gradients (a gradient vector) based on the forward and backward scores for each feature                                       |
-| 4        | Run the L-BFGS algorithm to learn the weights based on the training sets                                                                                            |
-| 5        | Design project, we used BiLSTM-CRF, attention and BERT for POS tagging                                                                                              |
+| 1.1 | write a function to estimate the emission probabilities based on the training set |
+| 1.2 | write a function to estimate the transition probabilities based on the training set |
+| 2.1 | write a function to calculate the score for a given pair of input and output sequence pair (x, y), based on the above-mentioned features and weights used in Part 1 |
+| 2.2 | perform decoding using the Viterbi algorithm to find the most probable output sequence y\* for an input sequence x |
+| 3.1 | write a function to calculate the value of the loss defined above based on the forward algorithm |
+| 3.2 | implement a function to calculate the gradients (a gradient vector) based on the forward and backward scores for each feature |
+| 4 | Run the L-BFGS algorithm to learn the weights based on the training sets |
+| 5 | Design project, we used BiLSTM-CRF, attention and BERT for POS tagging |
 
 # Setup
+
 1. install virtualenv
 2. run `pip install -r requirements.txt`
 
 # Instructions to run
+
 - P1: run `python P1.py <train file>`
 - P2: run `python P2.py <train file> <dev in file> <dev out file>`
 - P3: run `python P3.py <train in file>`
@@ -25,10 +28,26 @@ Implement CRF by hand based on 2 POS datasets
 - P5 attention model: run `python transformers.py <train file> <dev in file> <dev out file> <lang>`, lang is "EN" or "ES"
 
 # Results:
-Using BiLSTM-CRF: 
+
+## P4:
 
 | Metrics                | EN     | ES     |
-|------------------------|--------|--------|
+| ---------------------- | ------ | ------ |
+| # Entity in gold data  | 210    | 235    |
+| # Entity in prediction | 35     | 21     |
+| # Correct Entity       | 22     | 6      |
+| Entity precision       | 0.6286 | 0.2857 |
+| Entity recall          | 0.1048 | 0.0255 |
+| Entity F               | 0.1796 | 0.0469 |
+| # Correct sentiment    | 14     | 6      |
+| Sentiment precision    | 0.4000 | 0.2857 |
+| Sentiment recall       | 0.0667 | 0.0255 |
+| Sentiment F            | 0.1143 | 0.0469 |
+
+## Using BiLSTM-CRF:
+
+| Metrics                | EN     | ES     |
+| ---------------------- | ------ | ------ |
 | # Entity in gold data  | 210    | 235    |
 | # Entity in prediction | 158    | 156    |
 | # Correct Entity       | 118    | 125    |
