@@ -285,11 +285,11 @@ class CRF(CRF):
         grads: gradients, numpy array
         '''
         w_dict = defaultdict(lambda:0)
-        w_dict.update({k:v for k, v in zip(self.train_probabilities.f.keys(), w)})
+        w_dict.update({k:v for k, v in zip(self.w_keys, w)})
         loss = self.calculate_loss(w_dict, self.training_path)
         print(loss)
         grads = self.calculate_gradient(w_dict, self.training_path)
-        grads = np.array(list(grads.values()))
+        grads = np.array([grads[k] for k in self.w_keys])
         print(grads)
         return loss, grads
 
@@ -297,9 +297,12 @@ class CRF(CRF):
     def train(self):
         # init_w = np.zeros(len(self.train_probabilities.f.keys()))
         # init_w = np.array(list(self.train_probabilities.f.values()))
-        init_w = np.full(len(self.train_probabilities.f.keys()), 0)
-        result = fmin_l_bfgs_b(self.get_loss_grad, init_w, pgtol=0.01, callback=self.callbackF)
-        trained_weights = result[0]
+        self.w_keys = list(self.train_probabilities.f.keys())
+        init_w = np.full(len(self.w_keys), 0)
+        trained_weights = init_w
+        for ep in range(30):
+            result = fmin_l_bfgs_b(self.get_loss_grad, trained_weights, pgtol=0.01, callback=self.callbackF)
+            trained_weights = result[0]
         w_dict = defaultdict(lambda:-10000.)
         w_dict.update({k:v for k, v in zip(self.train_probabilities.f.keys(), trained_weights)})
         return w_dict
