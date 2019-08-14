@@ -6,7 +6,7 @@ from scipy.optimize import fmin_l_bfgs_b
 
 
 class CRF(CRF):
-    def __init__(self, training_path="data/EN/train", l2_param=0.1):
+    def __init__(self, training_path="data/ES/train", l2_param=0.1):
         self.training_path = training_path
         self.l2_param = l2_param
         super(CRF, self).__init__()
@@ -237,7 +237,7 @@ class CRF(CRF):
                                     pass
 
 #                        w_score[transition_key] += expected_counts/denom - counts
-                        w_score[transition_key] += expected_counts - counts
+                        w_score[transition_key] += expected_counts/denom - counts
                     
                     # reset
                     y_x_count = defaultdict(int)
@@ -287,22 +287,25 @@ class CRF(CRF):
         w_dict = defaultdict(lambda:0)
         w_dict.update({k:v for k, v in zip(self.w_keys, w)})
         loss = self.calculate_loss(w_dict, self.training_path)
-        print(loss)
+        # print(loss)
         grads = self.calculate_gradient(w_dict, self.training_path)
         grads = np.array([grads[k] for k in self.w_keys])
-        print(grads)
+        # print(grads)
         return loss, grads
 
-    
+
     def train(self):
         # init_w = np.zeros(len(self.train_probabilities.f.keys()))
         # init_w = np.array(list(self.train_probabilities.f.values()))
         self.w_keys = list(self.train_probabilities.f.keys())
         init_w = np.full(len(self.w_keys), 0)
         trained_weights = init_w
-        for ep in range(30):
+        final_loss = None
+        for ep in range(5):
             result = fmin_l_bfgs_b(self.get_loss_grad, trained_weights, pgtol=0.01, callback=self.callbackF)
             trained_weights = result[0]
+            final_loss = result[1]
+        print(final_loss)
         w_dict = defaultdict(lambda:-10000.)
         w_dict.update({k:v for k, v in zip(self.train_probabilities.f.keys(), trained_weights)})
         return w_dict
@@ -316,6 +319,14 @@ def log_sum_exp(vec):
     return max_score + np.log(np.sum(np.exp(vec - max_score)))
 
 if __name__ == "__main__":
-    crf = CRF()
+    import sys
+    if len(sys.argv) < 4:
+        print ('Please make sure you have installed Python 3.4 or above!')
+        print ("Usage on Windows:  python P4.py <train file> <dev in file> <dev out file>")
+        print ("Usage on Linux/Mac:  python3 P4.py <train file> <dev in file> <dev out file>")
+        sys.exit()
+    # Command: python P4.py <train file> <dev in file> <dev out file>
+    crf = CRF(sys.argv[1])
     trained_weights = crf.train()
-    crf.decode(trained_weights, 'data/EN/dev.in', 'data/EN/dev.p4.out')
+    # np.save("P4_ES_weights.npy", trained_weights)
+    crf.decode(trained_weights, sys.argv[2], sys.argv[3])

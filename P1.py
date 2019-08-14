@@ -49,16 +49,12 @@ class TrainProbabilities:
         self.f.update(q)
 
 if __name__ == "__main__":
-    t = TrainProbabilities()
-    print(t.y_count.keys())
-
-
-
-
-
-
-
-
-
-
-
+    import sys
+    if len(sys.argv) < 2:
+        print ('Please make sure you have installed Python 3.4 or above!')
+        print ("Usage on Windows:  python P1.py <train file>")
+        print ("Usage on Linux/Mac:  python3 P1.py <train file>")
+        sys.exit()
+    # command: python P1.py <train file>
+    t = TrainProbabilities(sys.argv[1])
+    print(t.f)

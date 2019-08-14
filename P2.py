@@ -168,21 +168,16 @@ class CRF:
     
 
 if __name__ == '__main__':
-    crf = CRF()
+    import sys
+    if len(sys.argv) < 4:
+        print ('Please make sure you have installed Python 3.4 or above!')
+        print ("Usage on Windows:  python P2.py <train file> <dev in file> <dev out file>")
+        print ("Usage on Linux/Mac:  python3 P2.py <train file> <dev in file> <dev out file>")
+        sys.exit()
+    # command: python P2.py <train file> <dev in file> <dev out file>
+    crf = CRF(sys.argv[1])
     crf.apply_viterbi()
-    crf.apply_viterbi(test_path='data/ES/dev.in',save_path='data/ES/dev.p2.out')
-#print(crf._viterbi('All in all , the food was great ( except the desserts ) .'.split()))
-#print(crf.train_probabilities.f.keys())
-
-
-
-
-#for y in 'O B-positive B-negative'.split():
-#    try:
-#        print(crf.train_probabilities.f["transition:%s+%s"%(y,STOP_TOK)])
-#    except:
-#        pass
-
+    crf.apply_viterbi(test_path=sys.argv[2],save_path=sys.argv[3])
 
 """
 emission:O+All transition:♞START♞+O -9.079345204990318
