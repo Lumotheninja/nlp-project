@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.optim as optim
 import torch
+import sys
 
 class BiLSTMCRF(nn.Module):
     def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim):
@@ -227,6 +228,11 @@ def test(f_path, out_path):
             f.write("\n")
 
 if __name__ == "__main__":
+    if len(sys.argv) < 5:
+        print ('Please make sure you have installed Python 3.4 or above!')
+        print ("Usage on Windows:  python <train file> <dev in file> <dev out file> <lang>")
+        print ("Usage on Linux/Mac:  python3 evalResult.py <train file> <dev in file> <dev out file> <lang>")
+        sys.exit()
     START_TOK = '♞START♞'
     STOP_TOK = '♞STOP♞'
     EMBEDDING_DIM = 5
@@ -235,10 +241,12 @@ if __name__ == "__main__":
     WEIGHT_DECAY = 1e-4
     EPOCHS = 10
     word_to_ix = {}
-    # TAG to IDX for EN
-    # tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, START_TOK: 7, STOP_TOK: 8}
-    # TAG to IDX for ES
-    tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, 'B-conflict': 7, START_TOK: 8, STOP_TOK: 9}
-    train('data/ES/train')
-    test('data/ES/dev.in', 'data/ES/dev.p5.out')
+    if sys.argv[5] == "EN":
+        # TAG to IDX for EN
+        tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, START_TOK: 7, STOP_TOK: 8}
+    else:
+        # TAG to IDX for ES
+        tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, 'B-conflict': 7, START_TOK: 8, STOP_TOK: 9}
+    train(sys.argv[2])
+    test(sys.argv[3], sys.argv[4])
 

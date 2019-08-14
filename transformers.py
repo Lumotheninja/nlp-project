@@ -1,4 +1,5 @@
 from P1 import TrainProbabilities, START_TOK, STOP_TOK
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -229,7 +230,7 @@ def parse_test_file(path):
 
 def train(f_path):
     training_data, word_to_ix = parse_training_file(f_path)
-    global vocab_len = len(word_to_ix) + 1 for "UNK"
+    vocab_len = len(word_to_ix) + 1
     emb = WordPositionEmbedding(vocab_len)
     encoder = TransformerEncoder()
     decoder = TransformerDecoder()
@@ -250,6 +251,7 @@ def train(f_path):
     torch.save(decoder.state_dict(), 'decoder_ES.pt')
 
 def test(f_path, out_path):
+    global vocab_len
     emb = WordPositionEmbedding(vocab_len)
     encoder = TransformerEncoder()
     decoder = TransformerDecoder()
@@ -267,7 +269,7 @@ def test(f_path, out_path):
     test_data = parse_test_file(f_path)
     output = []
     for x in test_data:
-        src_ids = torch.tensor([word_to_ix[word] for word in x if word in word_to_ix else len(vocab_len)], dtype=torch.long).unsqueeze(0) #UNK word
+        src_ids = torch.tensor([word_to_ix[word] if word in word_to_ix else len(vocab_len) for word in x ], dtype=torch.long).unsqueeze(0) #UNK word
         x = encoder(emb(src_ids))
         y = decoder(emb(tgt_ids), x)
         tags = [ix_to_tag[t] for t in y]
@@ -280,5 +282,17 @@ def test(f_path, out_path):
             f.write("\n")
 
 if __name__ == "__main__":
-    train('data/ES/train')
+    if len(sys.argv) < 5:
+        print ('Please make sure you have installed Python 3.4 or above!')
+        print ("Usage on Windows:  python <train file> <dev in file> <dev out file> <lang>")
+        print ("Usage on Linux/Mac:  python3 evalResult.py <train file> <dev in file> <dev out file> <lang>")
+        sys.exit()
+    if sys.argv[5] == "EN":
+        # TAG to IDX for EN
+        tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, START_TOK: 7, STOP_TOK: 8}
+    else:
+        # TAG to IDX for ES
+        tag_to_ix = {'O': 0, 'B-positive': 1, 'B-negative': 2, 'I-positive': 3, 'B-neutral': 4, 'I-neutral': 5, 'I-negative': 6, 'B-conflict': 7, START_TOK: 8, STOP_TOK: 9}
+    train(sys.argv[2])
+    test(sys.argv[3], sys.argv[4])
     
