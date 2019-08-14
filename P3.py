@@ -197,7 +197,7 @@ class CRF(CRF):
                             # include all possible transitions
                             if x == running_x[index]:
                                 try:
-                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y])
+                                    expected_counts += np.exp(forward_score[index+1][y] + backward_score[index+1][y] - denom)
                                 except KeyError as e:
                                     pass
                         w_score[emission_key] += expected_counts/denom - counts
@@ -214,7 +214,7 @@ class CRF(CRF):
                             # START doesnt have emission
                             if index == 0:
                                 try:
-                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[transition_key] - denom)
                                 except KeyError:
                                     pass
 
@@ -223,7 +223,7 @@ class CRF(CRF):
                                 x = running_x[index-1]
                                 emission_key = "emission:%s+%s"%(y0, x)
                                 try:
-                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key])
+                                    expected_counts += np.exp(forward_score[index][y0] + backward_score[index+1][y1] + w[emission_key] + w[transition_key] - denom)
                                 except KeyError as e:
                                     pass
 
@@ -262,7 +262,14 @@ def log_sum_exp(vec):
     return max_score + np.log(np.sum(np.exp(vec - max_score)))
 
 if __name__ == "__main__":
-  crf = CRF()
-  print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+and',value=-.1))
-  #print(crf.calculate_loss( crf.train_probabilities.f, "data/EN/train"))
-  #print(crf.calculate_gradient( crf.train_probabilities.f, "data/EN/train"))
+  import sys
+  if len(sys.argv) < 2:
+    print ("Please provide train filename")
+  else:
+    crf = CRF()
+    print ("Loss: ")
+    print (crf.calculate_loss( crf.train_probabilities.f, sys.argv[1]))
+    print ("Gradient: ")
+    print (crf.calculate_gradient( crf.train_probabilities.f, sys.argv[1]))
+    print ("Test whether gradient agrees")
+    print (crf.test_gradient(crf.train_probabilities.f, "data/EN/train", 'emission:O+and',value=-.1))
