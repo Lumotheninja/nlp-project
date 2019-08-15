@@ -1,16 +1,6 @@
 # NLP Project
 
-Implement CRF by hand based on 2 POS datasets
-| Question | Description |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.1 | write a function to estimate the emission probabilities based on the training set |
-| 1.2 | write a function to estimate the transition probabilities based on the training set |
-| 2.1 | write a function to calculate the score for a given pair of input and output sequence pair (x, y), based on the above-mentioned features and weights used in Part 1 |
-| 2.2 | perform decoding using the Viterbi algorithm to find the most probable output sequence y\* for an input sequence x |
-| 3.1 | write a function to calculate the value of the loss defined above based on the forward algorithm |
-| 3.2 | implement a function to calculate the gradients (a gradient vector) based on the forward and backward scores for each feature |
-| 4 | Run the L-BFGS algorithm to learn the weights based on the training sets |
-| 5 | Design project, we used BiLSTM-CRF, attention and BERT for POS tagging |
+Implement CRF by hand based on 2 POS datasets  
 
 # Setup
 
